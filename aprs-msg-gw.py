@@ -192,6 +192,8 @@ def process_mails(imap, f, heard_only = False):
             src = mycall
 
         dst = msg['to']
+        if '<' in dst:
+            dst = dst[dst.find('<')+1:dst.find('>')]
         dst = dst[:dst.find('@')]
         dst = dst.upper()
         if not verify_callsign(dst):
