@@ -30,8 +30,6 @@ senders = {
 
 # Signals to track all the time:
 track = [ 'MYCALL*', 'A2CALL*' ]
-messages = {}
-heard = {}
 
 # APRS-IS server pool and your APRS-IS password:
 aprsis_server = 'euro.aprs2.net'
@@ -41,8 +39,6 @@ aprsis_pass = ''
 mail_server = 'imap.mydomain.com'
 mail_user = 'aprs'
 mail_pass = ''
-
-tocall = 'APRS'
 
 def verify_callsign(call):
     parts = call.split('-')
@@ -305,8 +301,11 @@ def aprs_msg_gw():
     imap.logout()
     is_s.close()
 
+tocall = 'APRS'
 is_s = None
 imap = None
+messages = {}
+heard = {}
 
 # Restart the gateway if something goes wrong (ie lost connection to APRS-IS or IMAP server)
 while True:
