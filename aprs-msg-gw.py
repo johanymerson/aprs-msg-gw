@@ -146,7 +146,7 @@ def send_mail(src, dst, subject, body):
     s.quit()
 
 def process_mails(imap, f, heard_only = False):
-    global messages
+    global messages, conversations
 
     dummy,ret  = imap.uid('search', None, f)
     for nr in ret[0].split():
@@ -181,6 +181,7 @@ def process_mails(imap, f, heard_only = False):
                        "Re: " + msg['subject'],
                        "Message delivered to %s.\r\nView on map:\r\nhttp://aprs.fi/#!call=a%%2F%s" % (messages[msgid]['ackedby'], messages[msgid]['ackedby']))
             imap.uid('store', nr, '+FLAGS', '\\Deleted')
+            conversations[messages[msgid]['ackedby']] = replyto
             del messages[msgid]
             continue
             
@@ -292,6 +293,9 @@ def aprs_msg_gw():
         print("Stations heard:")
         for s in heard:
             print("    %s (%s)" % (s, heard[s]['lastheard']))
+        print("Conversations:")
+        for c in conversations:
+            print("    %s <-> %s" % (conversations[c], c))
 
         # Send unseen messages immediately
         process_mails(imap, '(UNSEEN)')
@@ -312,6 +316,7 @@ is_s = None
 imap = None
 messages = {}
 heard = {}
+conversations = {}
 
 # Restart the gateway if something goes wrong (ie lost connection to APRS-IS or IMAP server)
 while True:
