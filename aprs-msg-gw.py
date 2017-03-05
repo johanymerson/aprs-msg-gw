@@ -106,7 +106,7 @@ def process_incoming_msg(src, dst, text):
     return True
 
 def process_aprsis():
-    global messages, heard
+    global messages, heard, last_aprsis_heartbeat
 
     try:
         p = is_s.recv(256)
@@ -118,6 +118,7 @@ def process_aprsis():
         return
 
     if p[0] == '#':
+        last_aprsis_heartbeat = datetime.now()
         return
 
     src, rest = p.split('>', 1)
@@ -333,6 +334,11 @@ def aprs_msg_gw():
         while datetime.now() - lastcheck < timeout:
             process_aprsis()
 
+        # Check for APRS-IS heartbeat
+        if datetime.now() - last_aprsis_heartbeat > timedelta(seconds=60):
+            print("Missing heartbeat from APRS-IS. Closing connection.")
+            is_s.close()
+
         # Send queued messages to heard stations
         process_mails(imap, 'NOT DELETED', heard_only=True)
 
@@ -343,6 +349,7 @@ def aprs_msg_gw():
 
 tocall = 'APRS'
 is_s = None
+last_aprsis_heartbeat = datetime.now()
 imap = None
 messages = {}
 heard = {}
