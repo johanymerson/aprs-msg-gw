@@ -39,6 +39,7 @@ aprsis_pass = ''
 mail_server = 'imap.mydomain.com'
 mail_user = 'aprs'
 mail_pass = ''
+mail_domain = 'mydomain.com'
 
 def verify_callsign(call):
     parts = call.split('-')
@@ -81,6 +82,15 @@ def aprsis_send_msg(dstsig, text, msgid):
     is_s.send(pkt.encode('ascii', 'replace'))
     print(pkt.encode('ascii', 'replace'))
 
+def process_incoming_msg(src, dst, text):
+    if dst in senders:
+        dst = senders[dst]
+
+    print("From %s to %dst: %s" % (src, dst, text))
+    send_mail(src + "@" + mail_domain, dst, text, "View on map:\r\nhttp://aprs.fi/#!call=a%%2F%s" % src)
+
+    return
+
 def process_aprsis():
     global messages, heard
 
@@ -113,6 +123,7 @@ def process_aprsis():
         msg = msg.strip()
 
         if not msg[0:3] == "ack":
+            process_incoming_msg(src, dst, msg)
             return
         
         ackid = int(msg[3:])
