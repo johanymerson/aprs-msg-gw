@@ -94,14 +94,14 @@ def aprsis_send_ack(dstsig, msgid):
     print(pkt.encode('ascii', 'replace'))
 
 def process_incoming_msg(src, dst, text):
-    if dst in conversations:
-        dst = conversations[dst]
+    if src in conversations:
+        dst = conversations[src]
     else:
-        print("No current conversation with %s" % dst)
+        print("No current conversation with %s" % src)
         return False
 
     print("From %s to %s: %s" % (src, dst, text))
-    send_mail(src + "@" + mail_domain, dst, text, "View on map:\r\nhttp://aprs.fi/#!call=a%%2F%s" % src)
+    send_mail(src.lower() + "@" + mail_domain, dst, text, "View on map:\r\nhttp://aprs.fi/#!call=a%%2F%s" % src)
 
     return True
 
@@ -141,11 +141,12 @@ def process_aprsis():
     if not msg[0:3] == "ack":
         if '{' in msg:
             text, msgid = msg.split('{')
+            msgid = int(msgid)
         else:
             text = msg
             msgid = None
-        process_incoming_msg(src, dst, text)
-        aprsis_send_ack(src, msgid)
+        if process_incoming_msg(src, dst, text) and msgid:
+            aprsis_send_ack(src, msgid)
         return
 
     ackid = int(msg[3:])
