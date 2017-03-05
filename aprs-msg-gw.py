@@ -82,6 +82,8 @@ def aprsis_send_msg(dstsig, text, msgid):
     print(pkt.encode('ascii', 'replace'))
 
 def process_aprsis():
+    global messages, heard
+
     try:
         p = is_s.recv(256)
     except socket.timeout:
@@ -130,7 +132,7 @@ def aprsis_update_filter():
     is_s.send(cmd.encode('ascii'))
     print(cmd)
 
-def send_reply(src, dst, subject, body):
+def send_mail(src, dst, subject, body):
     msg = MIMEMultipart()
     msg['from'] = src
     msg['to'] = dst
@@ -144,6 +146,8 @@ def send_reply(src, dst, subject, body):
     s.quit()
 
 def process_mails(imap, f, heard_only = False):
+    global messages
+
     dummy,ret  = imap.uid('search', None, f)
     for nr in ret[0].split():
         dummy, msg = imap.uid('fetch', nr, '(RFC822)')
@@ -164,7 +168,7 @@ def process_mails(imap, f, heard_only = False):
 
         if msgid in messages and messages[msgid]['retries'] > 10:
             print("Too many retries")
-            send_reply(msg['to'], replyto,
+            send_mail(msg['to'], replyto,
                        "Re: " + msg['subject'],
                        "Message NOT delivered, too many retries.\r\n")
             imap.uid('store', nr, '+FLAGS', '\\Deleted')
@@ -173,7 +177,7 @@ def process_mails(imap, f, heard_only = False):
 
         if msgid in messages and messages[msgid]['delivered']:
             print("Message delivered")
-            send_reply(msg['to'], replyto,
+            send_mail(msg['to'], replyto,
                        "Re: " + msg['subject'],
                        "Message delivered to %s.\r\nView on map:\r\nhttp://aprs.fi/#!call=a%%2F%s" % (messages[msgid]['ackedby'], messages[msgid]['ackedby']))
             imap.uid('store', nr, '+FLAGS', '\\Deleted')
@@ -198,7 +202,7 @@ def process_mails(imap, f, heard_only = False):
         dst = dst.upper()
         if not verify_callsign(dst):
             print("Malformed callsign %s" % dst)
-            send_reply(msg['to'], replyto,
+            send_mail(msg['to'], replyto,
                        "Re: " + msg['subject'],
                        "Malformed callsign %s." % dst)
             imap.uid('store', nr, '+FLAGS', '\\Deleted')
