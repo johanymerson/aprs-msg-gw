@@ -82,14 +82,28 @@ def aprsis_send_msg(dstsig, text, msgid):
     is_s.send(pkt.encode('ascii', 'replace'))
     print(pkt.encode('ascii', 'replace'))
 
+def aprsis_send_ack(dstsig, msgid):
+    # Pad signal to 9 chars
+    while len(dstsig) < 9:
+        dstsig = dstsig + ' '
+
+    # APRS-IS always use the path TCPIP*
+    pkt = "%s>%s,TCPIP*," % (mycall, tocall)
+    pkt = pkt + "%s::%s:ack%i\r\n" % (mycall, dstsig, msgid)
+    is_s.send(pkt.encode('ascii', 'replace'))
+    print(pkt.encode('ascii', 'replace'))
+
 def process_incoming_msg(src, dst, text):
-    if dst in senders:
-        dst = senders[dst]
+    if dst in conversations:
+        dst = conversations[dst]
+    else:
+        print("No current conversation with %s" % dst)
+        return False
 
     print("From %s to %s: %s" % (src, dst, text))
     send_mail(src + "@" + mail_domain, dst, text, "View on map:\r\nhttp://aprs.fi/#!call=a%%2F%s" % src)
 
-    return
+    return True
 
 def process_aprsis():
     global messages, heard
@@ -125,6 +139,7 @@ def process_aprsis():
 
     if not msg[0:3] == "ack":
         process_incoming_msg(src, dst, msg)
+        aprsis_send_ack(src, msgid)
         return
 
     ackid = int(msg[3:])
