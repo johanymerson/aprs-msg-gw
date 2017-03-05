@@ -86,7 +86,7 @@ def process_incoming_msg(src, dst, text):
     if dst in senders:
         dst = senders[dst]
 
-    print("From %s to %dst: %s" % (src, dst, text))
+    print("From %s to %s: %s" % (src, dst, text))
     send_mail(src + "@" + mail_domain, dst, text, "View on map:\r\nhttp://aprs.fi/#!call=a%%2F%s" % src)
 
     return
@@ -100,39 +100,38 @@ def process_aprsis():
         return
 
     p = p.decode('ascii', 'replace')
-    
-    try:
-        if p[0] == '#':
-            return
-        
-        src, rest = p.split('>', 1)
-        path, data = rest.split(':', 1)
+    if not len(p):
+        return
 
-        # Only track messages capable devices
-        if data[0] in "=@`":
-            heard[src] = {'lastheard': datetime.now()}
+    if p[0] == '#':
+        return
 
-        print(p)
-        
-        if not data[0] == ':':
-            # Not a message packet
-            return
+    src, rest = p.split('>', 1)
+    path, data = rest.split(':', 1)
 
-        dst, msg = data[1:].split(':', 1)
-        dst = dst.strip()
-        msg = msg.strip()
+    # Only track messages capable devices
+    if data[0] in "=@`":
+        heard[src] = {'lastheard': datetime.now()}
 
-        if not msg[0:3] == "ack":
-            process_incoming_msg(src, dst, msg)
-            return
-        
-        ackid = int(msg[3:])
-        if ackid in messages:
-            print("Ack on message %s" % ackid)
-            messages[ackid]['delivered'] = True
-            messages[ackid]['ackedby'] = src
-    except:
-        pass
+    print(p)
+
+    if not data[0] == ':':
+        # Not a message packet
+        return
+
+    dst, msg = data[1:].split(':', 1)
+    dst = dst.strip()
+    msg = msg.strip()
+
+    if not msg[0:3] == "ack":
+        process_incoming_msg(src, dst, msg)
+        return
+
+    ackid = int(msg[3:])
+    if ackid in messages:
+        print("Ack on message %s" % ackid)
+        messages[ackid]['delivered'] = True
+        messages[ackid]['ackedby'] = src
 
 def aprsis_update_filter():
     cmd = "#filter b/%s" % mycall
