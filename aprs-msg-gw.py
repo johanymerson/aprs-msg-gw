@@ -138,7 +138,12 @@ def process_aprsis():
     msg = msg.strip()
 
     if not msg[0:3] == "ack":
-        process_incoming_msg(src, dst, msg)
+        if '{' in msg:
+            text, msgid = msg.split('{')
+        else:
+            text = msg
+            msgid = None
+        process_incoming_msg(src, dst, text)
         aprsis_send_ack(src, msgid)
         return
 
